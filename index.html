@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="color-scheme" content="light dark">
+<style>html{-webkit-text-size-adjust:100%;padding-top:env(safe-area-inset-top,0px)}body{margin:0}</style>
+<title>Тест виброотклика</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone column. A workout log (sets with steppers and a done check), a strip for feeling each haptic pattern, and a matte floating plus button with a small menu. */
+:root {
+  --bg: #E8EBEF;
+  --surface: #F7F8FA;
+  --ink: #12161C;
+  --muted: #566070;
+  --line: #CBD1D9;
+  --work: #D9480F;
+  --rest: #0B6E69;
+  --on-rest: #FFFFFF;
+  --display: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1217;
+    --surface: #171C23;
+    --ink: #EEF1F5;
+    --muted: #9AA5B4;
+    --line: #2A323D;
+    --work: #FF7A3D;
+    --rest: #36BDB5;
+    --on-rest: #031A19;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1217;
+  --surface: #171C23;
+  --ink: #EEF1F5;
+  --muted: #9AA5B4;
+  --line: #2A323D;
+  --work: #FF7A3D;
+  --rest: #36BDB5;
+  --on-rest: #031A19;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.45;
+  padding-inline: 16px;
+  padding-block: 20px 120px;
+}
+main { max-width: 480px; margin-inline: auto; display: flex; flex-direction: column; gap: 26px; }
+:focus-visible { outline: 3px solid var(--work); outline-offset: 2px; }
+button { font-family: inherit; color: inherit; touch-action: manipulation; }
+
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-family: var(--display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 2.2rem; line-height: 1; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 46ch; }
+
+h2 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 10px; }
+
+.row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding-block: 12px; border-top: 1px solid var(--line); min-height: 52px; }
+.row-text { min-width: 0; display: flex; flex-direction: column; }
+.row-title { font-weight: 500; }
+.row-hint { font-size: 0.85rem; color: var(--muted); }
+input.tg {
+  appearance: none; -webkit-appearance: none;
+  flex: none; width: 50px; height: 30px; margin: 0; border-radius: 15px;
+  background: var(--line); position: relative; cursor: pointer; transition: background-color 0.15s;
+}
+input.tg::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--bg); transition: transform 0.15s; }
+input.tg:checked { background: var(--ink); }
+input.tg:checked::after { transform: translateX(20px); }
+
+.mech { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.seg { display: flex; flex: none; border: 1.5px solid var(--ink); border-radius: 6px; overflow: hidden; }
+.seg button { min-width: 48px; min-height: 40px; border: 0; background: transparent; color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.date { flex: none; min-height: 44px; padding-inline: 8px; border-radius: 6px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+.mech b { color: var(--ink); font-weight: 600; }
+
+/* Exercise */
+.ex { background: var(--surface); border-radius: 6px; padding: 16px 14px 14px; display: flex; flex-direction: column; gap: 12px; }
+.ex-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ex-name { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1.05; }
+.ex-meta { font-size: 0.85rem; color: var(--muted); }
+.cols, .set { display: grid; grid-template-columns: 22px 1fr 1fr 44px; gap: 8px; align-items: center; }
+.cols { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.cols span:nth-child(2), .cols span:nth-child(3) { text-align: center; }
+.set { padding-block: 6px; border-top: 1px solid var(--line); }
+.set-n { font-family: var(--display); font-weight: 600; font-size: 1.3rem; color: var(--muted); }
+.stp { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; }
+.stp button {
+  width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line);
+  background: var(--bg); font-size: 1.3rem; line-height: 1; cursor: pointer;
+}
+.stp button:active { background: var(--line); }
+.stp-val { min-width: 34px; text-align: center; font-family: var(--display); font-weight: 600; font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.done {
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line);
+  background: transparent; cursor: pointer; display: grid; place-items: center; transition: background-color 0.12s, border-color 0.12s, transform 0.12s;
+}
+.done svg { width: 22px; height: 22px; opacity: 0; }
+.done:active { transform: scale(0.92); }
+.set.is-done .done { background: var(--rest); border-color: var(--rest); color: var(--on-rest); }
+.set.is-done .done svg { opacity: 1; }
+.set.is-done .stp-val { color: var(--muted); }
+.add {
+  min-height: 48px; border-radius: 6px; border: 1.5px dashed var(--line); background: transparent;
+  font-family: var(--display); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+}
+.add:active { background: var(--line); }
+
+/* Feel strip */
+.feel { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; }
+.feel button {
+  min-height: 56px; border-radius: 6px; border: 2px solid var(--ink); background: transparent;
+  font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+}
+.feel button:active { background: var(--ink); color: var(--bg); }
+.last { margin: 0; min-height: 2.9em; font-size: 0.95rem; color: var(--muted); }
+
+/* Floating plus button */
+.fab {
+  position: fixed; right: 16px; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  width: 62px; height: 62px; border-radius: 50%; border: 0; cursor: pointer;
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  color: var(--bg); display: grid; place-items: center;
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--ink) 30%, transparent);
+  transition: transform 0.15s;
+  z-index: 20;
+}
+.fab svg { width: 28px; height: 28px; transition: transform 0.2s; }
+.fab:active { transform: scale(0.93); }
+.fab[aria-expanded="true"] svg { transform: rotate(45deg); }
+.menu {
+  position: fixed; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 8px; z-index: 20;
+}
+.menu button {
+  min-height: 52px; padding-inline: 20px; border-radius: 26px; border: 1px solid var(--line);
+  background: var(--surface); box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 18%, transparent);
+  font-weight: 600; font-size: 1rem; cursor: pointer; text-align: right;
+}
+.menu button:active { background: var(--line); }
+
+.sr { position: fixed; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .fab, .fab svg, .done, input.tg, input.tg::after { transition: none; }
+}
+</style>
+</head>
+<body>
+
+
+<main>
+  <header>
+    <span class="eyebrow">Вершинин Фитнес</span>
+    <h1>Тест виброотклика</h1>
+    <p class="lead">Нажимайте плюс, минус, галочку подхода и круглую кнопку справа внизу. На каждое касание идёт микроотклик.</p>
+  </header>
+
+  <section aria-label="Настройки отклика">
+    <label class="row" for="optHaptic">
+      <span class="row-text"><span class="row-title">Виброотклик на касания</span><span class="row-hint">Отключает отклик на кнопках ниже, кроме трёх проверок</span></span>
+      <input class="tg" type="checkbox" id="optHaptic" checked>
+    </label>
+    <label class="row" for="optClick">
+      <span class="row-text"><span class="row-title">Звук клика</span><span class="row-hint">Короткий щелчок, как у колеса выбора. Это звук, а не вибрация</span></span>
+      <input class="tg" type="checkbox" id="optClick" checked>
+    </label>
+    <div class="row">
+      <span class="row-text"><span class="row-title">Способ вибро</span><span class="row-hint">Не чувствуется на А, переключите на Б</span></span>
+      <div class="seg" role="group" aria-label="Способ вибро"><button type="button" data-m="A" aria-pressed="true">А</button><button type="button" data-m="B" aria-pressed="false">Б</button></div>
+    </div>
+    <label class="row" for="refDate">
+      <span class="row-text"><span class="row-title">Эталон: системный выбор даты</span><span class="row-hint">Покрутите колесо. Нет вибрации и здесь, значит дело в настройках iPhone</span></span>
+      <input type="date" id="refDate" class="date" value="2026-10-10">
+    </label>
+    <p class="mech" id="mech"></p>
+    <p class="mech" id="diag"></p>
+  </section>
+
+  <section aria-label="Тренировка">
+    <h2>Тренировка</h2>
+    <div class="ex">
+      <div class="ex-head">
+        <span class="ex-name">Тяга в петлях TRX</span>
+        <span class="ex-meta" id="exMeta"></span>
+      </div>
+      <div class="cols"><span>№</span><span>Наклон, °</span><span>Повторы</span><span></span></div>
+      <div id="sets"></div>
+      <button class="add" id="addSet" type="button">+ Подход</button>
+    </div>
+  </section>
+
+  <section aria-label="Проверка рисунков отклика">
+    <h2>Почувствовать рисунок</h2>
+    <div class="feel">
+      <button type="button" data-p="tick">Тик</button>
+      <button type="button" data-p="confirm">Двойной</button>
+      <button type="button" data-p="error">Тройной</button>
+    </div>
+    <p class="last" id="last" role="status">Последнее действие появится здесь.</p>
+  </section>
+</main>
+
+<div class="menu" id="menu" hidden>
+  <button type="button" data-a="Новая тренировка">Новая тренировка</button>
+  <button type="button" data-a="Новый приём пищи">Новый приём пищи</button>
+</div>
+<button class="fab" id="fab" type="button" aria-label="Добавить" aria-expanded="false" aria-controls="menu">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- haptic switches are created by the script -->
+<span hidden></span>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var canVibrate = typeof navigator.vibrate === 'function';
+
+  /* ---------- haptic ---------- */
+  var ANDROID = { tick: [12], confirm: [15, 70, 15], error: [15, 70, 15, 70, 15] };
+  var TAPS = { tick: 1, confirm: 2, error: 3 };
+  var NAMES = { tick: 'тик', confirm: 'двойной', error: 'тройной' };
+
+  /* iPhone haptic: a hidden Safari "switch" that we toggle through its label.
+     Method A hides the label with display:none, method B keeps it rendered off screen. */
+  var method = 'A', sent = 0, labels = {};
+  function makeSwitch(hidden) {
+    var l = document.createElement('label');
+    l.setAttribute('aria-hidden', 'true');
+    var i = document.createElement('input');
+    i.type = 'checkbox';
+    i.setAttribute('switch', '');
+    i.tabIndex = -1;
+    l.appendChild(i);
+    if (hidden) l.style.display = 'none';
+    else l.style.cssText = 'position:fixed;left:-80px;top:0;width:60px;height:34px;opacity:0.01;pointer-events:none';
+    document.body.appendChild(l);
+    return l;
+  }
+  labels.A = makeSwitch(true);
+  labels.B = makeSwitch(false);
+  function updateDiag() {
+    var on = labels[method].firstChild.checked;
+    $('diag').textContent = 'Способ ' + (method === 'A' ? 'А' : 'Б') + ': щелчков по переключателю ' + sent + ', сейчас он ' + (on ? 'включён' : 'выключен') + '.';
+  }
+  function iosTaps(n) {
+    function one() { try { labels[method].click(); sent++; } catch (e) {} updateDiag(); }
+    one();
+    for (var i = 1; i < n; i++) setTimeout(one, i * 90);
+  }
+  function haptic(kind) {
+    if (canVibrate) { try { navigator.vibrate(ANDROID[kind]); } catch (e) {} }
+    else if (isIOS) iosTaps(TAPS[kind]);
+  }
+
+  /* Click sound that imitates the wheel-picker tick. Sound only, no vibration. */
+  var actx = null;
+  var silent = new Audio();
+  silent.loop = true;
+  silent.setAttribute('playsinline', '');
+  function silentUri() {
+    var sr = 8000, dataLen = sr * 2, buf = new Uint8Array(44 + dataLen), dv = new DataView(buf.buffer);
+    function str(o, s) { for (var i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); }
+    str(0, 'RIFF'); dv.setUint32(4, 36 + dataLen, true); str(8, 'WAVE');
+    str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    str(36, 'data'); dv.setUint32(40, dataLen, true);
+    var s = '';
+    for (var i = 0; i < buf.length; i++) s += String.fromCharCode(buf[i]);
+    return 'data:audio/wav;base64,' + btoa(s);
+  }
+  try { silent.src = silentUri(); } catch (e) {}
+  function ensureAudio() {
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    if (!actx) { try { actx = new C(); } catch (e) { return null; } }
+    if (actx.state === 'suspended') { var r = actx.resume(); if (r && r.catch) r.catch(function () {}); }
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    if (silent.paused) { var p = silent.play(); if (p && p.catch) p.catch(function () {}); }
+    return actx;
+  }
+  function click() {
+    var c = ensureAudio(); if (!c) return;
+    var t = c.currentTime;
+    var n = Math.floor(c.sampleRate * 0.012), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.2;
+    var g = c.createGain(); g.gain.value = 0.9;
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start(t);
+    var o = c.createOscillator(), og = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(1600, t); o.frequency.exponentialRampToValueAtTime(900, t + 0.015);
+    og.gain.setValueAtTime(0.35, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.02);
+    o.connect(og); og.connect(c.destination); o.start(t); o.stop(t + 0.03);
+  }
+  function clicks(n) { click(); for (var i = 1; i < n; i++) setTimeout(click, i * 90); }
+
+  function tap(kind) {
+    if ($('optHaptic').checked) haptic(kind);
+    if ($('optClick').checked) clicks(TAPS[kind]);
+  }
+
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      method = b.dataset.m;
+      document.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      haptic('tick');
+      say('Способ ' + (method === 'A' ? 'А' : 'Б') + ': один тик.');
+    });
+  });
+  updateDiag();
+
+  $('mech').innerHTML = canVibrate
+    ? 'Механизм: <b>Android, navigator.vibrate</b>'
+    : (isIOS ? 'Механизм: <b>iPhone, переключатель Safari</b> (нужна iOS 17.4+ и включённые системные тактильные сигналы)'
+             : 'Механизм: <b>нет</b>. На этом устройстве вибрации нет, откройте страницу на телефоне.');
+
+  function say(msg) { $('last').textContent = msg; }
+
+  /* ---------- sets ---------- */
+  var sets = [
+    { tilt: 45, reps: 12, done: false },
+    { tilt: 45, reps: 12, done: false },
+    { tilt: 50, reps: 10, done: false }
+  ];
+  var LIM = { tilt: [10, 80, 5], reps: [1, 50, 1] };
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  function drawSets() {
+    $('sets').innerHTML = sets.map(function (s, i) {
+      return '<div class="set' + (s.done ? ' is-done' : '') + '" data-i="' + i + '">' +
+        '<span class="set-n">' + (i + 1) + '</span>' +
+        '<div class="stp"><button type="button" data-f="tilt" data-d="-1" aria-label="Наклон меньше">−</button><span class="stp-val" data-v="tilt">' + s.tilt + '</span><button type="button" data-f="tilt" data-d="1" aria-label="Наклон больше">+</button></div>' +
+        '<div class="stp"><button type="button" data-f="reps" data-d="-1" aria-label="Повторов меньше">−</button><span class="stp-val" data-v="reps">' + s.reps + '</span><button type="button" data-f="reps" data-d="1" aria-label="Повторов больше">+</button></div>' +
+        '<button class="done" type="button" data-done="1" aria-label="Подход выполнен" aria-pressed="' + s.done + '">' + CHECK + '</button>' +
+        '</div>';
+    }).join('');
+    meta();
+  }
+  function meta() {
+    var n = sets.filter(function (s) { return s.done; }).length;
+    $('exMeta').textContent = 'Выполнено ' + n + ' из ' + sets.length;
+  }
+
+  $('sets').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var row = b.closest('.set'); var i = +row.dataset.i; var s = sets[i];
+    if (b.dataset.done) {
+      s.done = !s.done;
+      row.classList.toggle('is-done', s.done);
+      b.setAttribute('aria-pressed', s.done);
+      tap(s.done ? 'confirm' : 'tick');
+      say('Подход ' + (i + 1) + (s.done ? ' отмечен: двойной тик.' : ' снят: один тик.'));
+      meta();
+    } else if (b.dataset.f) {
+      var f = b.dataset.f, l = LIM[f];
+      var v = Math.min(l[1], Math.max(l[0], s[f] + (+b.dataset.d) * l[2]));
+      if (v === s[f]) { tap('error'); say('Предел значения: тройной тик.'); return; }
+      s[f] = v;
+      row.querySelector('[data-v="' + f + '"]').textContent = v;
+      tap('tick');
+      say((f === 'tilt' ? 'Наклон' : 'Повторы') + ' в подходе ' + (i + 1) + ': ' + v + '. Один тик.');
+    }
+  });
+
+  $('addSet').addEventListener('click', function () {
+    if (sets.length >= 10) { tap('error'); say('Максимум 10 подходов: тройной тик.'); return; }
+    var last = sets[sets.length - 1];
+    sets.push({ tilt: last.tilt, reps: last.reps, done: false });
+    drawSets();
+    tap('tick');
+    say('Добавлен подход ' + sets.length + '. Один тик.');
+  });
+
+  /* ---------- feel strip ---------- */
+  document.querySelectorAll('.feel button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      haptic(b.dataset.p);
+      if ($('optClick').checked) clicks(TAPS[b.dataset.p]);
+      say('Проверка: ' + NAMES[b.dataset.p] + '.' + (!canVibrate && !isIOS ? ' На этом устройстве отклика нет.' : ''));
+    });
+  });
+
+  /* ---------- floating plus ---------- */
+  function setMenu(open) {
+    $('menu').hidden = !open;
+    $('fab').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  $('fab').addEventListener('click', function () {
+    var open = $('menu').hidden;
+    setMenu(open);
+    tap('tick');
+    say(open ? 'Меню открыто: один тик.' : 'Меню закрыто: один тик.');
+  });
+  $('menu').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    setMenu(false);
+    tap('confirm');
+    say('Выбрано: ' + b.dataset.a + ' (пример, ничего не создаётся). Двойной тик.');
+  });
+  document.addEventListener('click', function (e) {
+    if (!$('menu').hidden && !e.target.closest('#menu') && !e.target.closest('#fab')) setMenu(false);
+  });
+
+  drawSets();
+})();
+</script>
+
+</body>
+</html>
